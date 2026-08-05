@@ -51,19 +51,25 @@
             pointer-events: none;
         }
 
-        .castle {
-            z-index: 2;
-            background-image: url('/castle.svg');
-            background-position: bottom;
-            background-repeat: no-repeat;
-            background-size: contain;
-            width: 100%; height: 100%;
+.castle {
             position: absolute;
-            bottom: 45px;
+            /* Posiziona la base esattamente sopra il blocco nero di base (50px) */
+            bottom: 50px; 
+            left: 0;
+            width: 100%;
+            /* Altezza fissa proporzionale per il castello sullo sfondo */
+            height: 35vh; 
+            background-image: url('/castle.svg');
+            /* Centra il castello orizzontalmente e lo ancora in basso */
+            background-position: center bottom; 
+            background-repeat: no-repeat;
+            /* Ridimensiona l'immagine per adattarla all'altezza di 35vh mantenendo le proporzioni */
+            background-size: contain; 
+            z-index: 2;
             pointer-events: none;
         }
 
-        .base-block {
+.base-block {
             position: absolute;
             bottom: 0; left: 0;
             width: 100%; height: 50px;
@@ -74,8 +80,13 @@
 
         @media (max-width: 60rem) {
             .castle {
-                width: 402%;
-                left: -234%;
+                /* Rimuoviamo il width: 402% e left negativo.
+                   Il castello userà la definizione standard centrata, 
+                   magari abbassiamo leggermente l'altezza su mobile. */
+                height: 25vh; 
+                bottom: 50px;
+                width: 100%;
+                left: 0;
             }
         }
 

@@ -1,14 +1,3 @@
----
-title: Mdblist Translator
-emoji: 🚀
-colorFrom: purple
-colorTo: pink
-sdk: docker
-pinned: false
-license: mit
-short_description: MDBList Translator Stremio Addon
----
-
 # 🚀 Mdblist Trsanslator
 
 [Italiano](#italiano) | [English](#english)

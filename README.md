@@ -1,4 +1,4 @@
-# 🚀 Mdblist Tanslator
+# 🚀 Mdblist Translator
 
 [Italiano](#italiano) | [English](#english)
 

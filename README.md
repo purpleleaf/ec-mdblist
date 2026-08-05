@@ -1,4 +1,4 @@
-# 🚀 Mdblist Trsanslator
+# 🚀 Mdblist Tanslator
 
 [Italiano](#italiano) | [English](#english)
 
@@ -29,7 +29,7 @@ L'installazione è semplicissima ed è guidata dall'interfaccia web di questo Sp
 
 ## English
 
-Welcome to **Ec Mdblist**, the bridge addon designed to integrate your custom lists into Stremio.
+Welcome to **Mdblist Translator**, the bridge addon designed to integrate your custom lists into Stremio.
 
 ### 💡 What is MDBList?
 **MDBList** (Movie Database List) is a powerful online service that allows you to create automated and highly customized lists of movies and TV shows. You can filter content using a vast array of criteria, including IMDb, Rotten Tomatoes, and Metacritic ratings, release year, popularity, streaming platforms, genres, and much more.

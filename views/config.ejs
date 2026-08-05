@@ -25,7 +25,8 @@
 
         body {
             margin: 0;
-            background-color: #191625;
+            /* L'UNICA MODIFICA: Il muro ora è trasparente, così Firefox non nasconde lo z-index: -1 */
+            background-color: transparent; 
             color: var(--fg);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-y: auto;
@@ -296,7 +297,7 @@
 
         <div class="footer">
             <p>
-                <a class="hf-link" href="https://huggingface.co/spaces/<%= spacePath %>" target="_blank">
+                <a class="hf-link" href="https://github.com/purpleleaf/ec-mdblist<%= spacePath %>" target="_blank">
                     <i class="fa-solid fa-code"></i> View Source Code
                 </a>
             </p>

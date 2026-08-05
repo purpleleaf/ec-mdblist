@@ -186,6 +186,15 @@
         .footer a { color: var(--pink); text-decoration: none; margin: 0 5px; transition: color 0.2s; font-weight: 500; }
         .footer a:hover { color: var(--purple); text-decoration: underline; }
         .hf-link { display: inline-flex; align-items: center; gap: 5px; color: var(--orange) !important; font-weight: bold; }
+
+        /* FIX FIREFOX: Disattiva il blur solo su Mozilla per evitare il bug del motore grafico, salvando il castello */
+        @-moz-document url-prefix() {
+            .container {
+                backdrop-filter: none !important;
+                background: rgba(30, 32, 44, 0.96) !important;
+                border: 1px solid rgba(139, 233, 253, 0.3) !important;
+            }
+        }
     </style>
 </head>
 <body x-data="setup()">

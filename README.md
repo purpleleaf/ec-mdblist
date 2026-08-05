@@ -17,7 +17,7 @@ short_description: MDBList Translator Stremio Addon
 
 ## Italiano
 
-Benvenuto su **Mdblist Trasnlator**, l'addon ponte progettato per integrare le tue liste personalizzate su Stremio.
+Benvenuto su **Mdblist Translator**, l'addon ponte progettato per integrare le tue liste personalizzate su Stremio.
 
 ### 💡 Cos'è MDBList?
 **MDBList** (Movie Database List) è un potente servizio online che ti permette di creare liste automatiche e personalizzate di film e serie TV. Puoi filtrare i contenuti usando un'infinità di criteri, come i voti di IMDb, Rotten Tomatoes o Metacritic, l'anno di uscita, la popolarità, le piattaforme di streaming, i generi e molto altro.

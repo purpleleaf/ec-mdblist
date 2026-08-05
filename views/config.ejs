@@ -30,8 +30,6 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-y: auto;
             overflow-x: hidden;
-            display: flex;
-            flex-direction: column;
             min-height: 100dvh;
         }
 
@@ -40,7 +38,11 @@
             inset: 0; 
             background-image: linear-gradient(to bottom, #191625, #544987);
             z-index: 0;
-            pointer-events: none; 
+            
+            /* Aggiunto flexbox per centrare il .container ora che è figlio di .hero */
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         #starCanvas {
@@ -51,25 +53,21 @@
             pointer-events: none;
         }
 
-.castle {
+        .castle {
             position: absolute;
-            /* Posiziona la base esattamente sopra il blocco nero di base (50px) */
             bottom: 50px; 
             left: 0;
             width: 100%;
-            /* Altezza fissa proporzionale per il castello sullo sfondo */
             height: 35vh; 
             background-image: url('/castle.svg');
-            /* Centra il castello orizzontalmente e lo ancora in basso */
             background-position: center bottom; 
             background-repeat: no-repeat;
-            /* Ridimensiona l'immagine per adattarla all'altezza di 35vh mantenendo le proporzioni */
             background-size: contain; 
             z-index: 2;
             pointer-events: none;
         }
 
-.base-block {
+        .base-block {
             position: absolute;
             bottom: 0; left: 0;
             width: 100%; height: 50px;
@@ -80,9 +78,6 @@
 
         @media (max-width: 60rem) {
             .castle {
-                /* Rimuoviamo il width: 402% e left negativo.
-                   Il castello userà la definizione standard centrata, 
-                   magari abbassiamo leggermente l'altezza su mobile. */
                 height: 25vh; 
                 bottom: 50px;
                 width: 100%;
@@ -97,24 +92,31 @@
             width: 90%; 
             max-width: 450px;
             padding: 40px;
-            margin: auto; 
-            margin-top: 40px; 
-            margin-bottom: 40px;
+            /* Rimosso il margin: auto e top/bottom. La centratura è gestita da .hero */
             border-radius: 16px;
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
             z-index: 10;
             position: relative;
             border: 1px solid rgba(139, 233, 253, 0.12);
             box-sizing: border-box; 
+            /* Importante: ripristina pointer-events per consentire clic dentro il contenitore, 
+               poiché il suo genitore (.hero) potrebbe averli disabilitati */
+            pointer-events: auto;
+            /* Permette lo scrolling interno se il modulo diventa troppo lungo per schermi piccoli */
+            max-height: 90vh;
+            overflow-y: auto;
         }
+        
+        /* Personalizzazione della scrollbar del contenitore (opzionale) */
+        .container::-webkit-scrollbar { width: 6px; }
+        .container::-webkit-scrollbar-thumb { background: var(--current); border-radius: 10px; }
 
         @media (max-width: 480px) {
             #starCanvas { display: none; }
             .container {
                 width: 95%;
                 padding: 25px 20px;
-                margin-top: 20px;
-                margin-bottom: 20px;
+                max-height: 95vh;
             }
             .header h1 {
                 font-size: 24px; 
@@ -204,119 +206,120 @@
         <canvas id="starCanvas"></canvas>
         <div class="castle"></div>
         <div class="base-block"></div>
-    </div>
-
-    <div class="container">
-        <div class="header">
-            <h1>MDBList Translator</h1>
-            <p><i class="fas fa-magic"></i> Unofficial Metadata Addon</p>
-        </div>
-
-        <div x-show="step === 1" x-transition.opacity>
-            <label>MDBList API Key</label>
-            <input type="text" x-model="mdbKey" placeholder="Paste your MDBList key">
-
-            <label>TMDB API Key</label>
-            <input type="text" x-model="tmdbKey" placeholder="Paste your TMDB key">
-
-            <p class="error" x-show="error" x-text="error"></p>
-            <button class="btn-verify" :disabled="loading" @click="verifyKeys()">
-                <span x-show="!loading"><i class="fas fa-plug"></i> Connect to MDBList</span>
-                <span x-show="loading"><i class="fas fa-spinner fa-spin"></i> Verifying...</span>
-            </button>
-        </div>
-
-        <div x-show="step === 2" style="display: none;" x-transition.opacity>
-<label>Addon Features</label>
-            <div class="switch-container" :class="enableSearch ? 'active' : ''">
-                <span style="font-size: 14px; font-weight: bold; color: var(--fg);">
-                    <i class="fas fa-search"></i> Enable TMDB Search
-                </span>
-                <label class="switch">
-                    <input type="checkbox" x-model="enableSearch">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <p style="font-size: 11px; color: var(--orange); margin-top: 5px; margin-bottom: 20px; line-height: 1.4;">
-                <i class="fas fa-exclamation-triangle"></i> <strong>Note:</strong> Turn this on ONLY if you don't use the official TMDB addon or Cinemeta. Otherwise, you will see duplicate search rows.
-            </p>
-            
-            <label>Sync Strategy</label>
-            <div class="switch-container" :class="syncAll ? 'active' : ''">
-                <span style="font-size: 14px; font-weight: bold; color: var(--fg);">
-                    <i class="fas fa-layer-group"></i> Sync All My Lists
-                </span>
-                <label class="switch">
-                    <input type="checkbox" x-model="syncAll">
-                    <span class="slider"></span>
-                </label>
+        
+        <!-- Il .container è stato inserito DENTRO .hero -->
+        <div class="container">
+            <div class="header">
+                <h1>MDBList Translator</h1>
+                <p><i class="fas fa-magic"></i> Unofficial Metadata Addon</p>
             </div>
 
-            <label x-show="!syncAll" x-transition>Select Individual Lists</label>
-            <div id="listsScroll" x-show="!syncAll" x-transition>
-                <template x-for="list in lists" :key="list.id">
-                    <div class="switch-container">
-                        <span x-text="list.name" style="font-size: 13px; color: var(--fg);"></span>
-                        <label class="switch">
-                            <input type="checkbox" :value="list.id" x-model="selectedLists">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </template>
+            <div x-show="step === 1" x-transition.opacity>
+                <label>MDBList API Key</label>
+                <input type="text" x-model="mdbKey" placeholder="Paste your MDBList key">
+
+                <label>TMDB API Key</label>
+                <input type="text" x-model="tmdbKey" placeholder="Paste your TMDB key">
+
+                <p class="error" x-show="error" x-text="error"></p>
+                <button class="btn-verify" :disabled="loading" @click="verifyKeys()">
+                    <span x-show="!loading"><i class="fas fa-plug"></i> Connect to MDBList</span>
+                    <span x-show="loading"><i class="fas fa-spinner fa-spin"></i> Verifying...</span>
+                </button>
             </div>
 
-            <label>Metadata Language</label>
-            <input type="text" x-model="langSearch" placeholder="Search language (e.g. en, it, fr)...">
-            <select x-model="selectedLang">
-                <template x-for="l in filteredLangs" :key="l.code">
-                    <option :value="l.code" :selected="l.code === selectedLang" x-text="l.name"></option>
-                </template>
-            </select>
+            <div x-show="step === 2" style="display: none;" x-transition.opacity>
+                <label>Addon Features</label>
+                <div class="switch-container" :class="enableSearch ? 'active' : ''">
+                    <span style="font-size: 14px; font-weight: bold; color: var(--fg);">
+                        <i class="fas fa-search"></i> Enable TMDB Search
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" x-model="enableSearch">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <p style="font-size: 11px; color: var(--orange); margin-top: 5px; margin-bottom: 20px; line-height: 1.4;">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Note:</strong> Turn this on ONLY if you don't use the official TMDB addon or Cinemeta. Otherwise, you will see duplicate search rows.
+                </p>
+                
+                <label>Sync Strategy</label>
+                <div class="switch-container" :class="syncAll ? 'active' : ''">
+                    <span style="font-size: 14px; font-weight: bold; color: var(--fg);">
+                        <i class="fas fa-layer-group"></i> Sync All My Lists
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" x-model="syncAll">
+                        <span class="slider"></span>
+                    </label>
+                </div>
 
-            <p class="error" x-show="!syncAll && selectedLists.length === 0">Please select at least one list.</p>
-            <p class="error" x-show="error" x-text="error"></p>
+                <label x-show="!syncAll" x-transition>Select Individual Lists</label>
+                <div id="listsScroll" x-show="!syncAll" x-transition>
+                    <template x-for="list in lists" :key="list.id">
+                        <div class="switch-container">
+                            <span x-text="list.name" style="font-size: 13px; color: var(--fg);"></span>
+                            <label class="switch">
+                                <input type="checkbox" :value="list.id" x-model="selectedLists">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </template>
+                </div>
 
-            <button class="btn-generate" :disabled="loading || (!syncAll && selectedLists.length === 0)" @click="generateLinks()">
-                <span x-show="!loading"><i class="fas fa-cogs"></i> Generate Addon Links</span>
-                <span x-show="loading"><i class="fas fa-spinner fa-spin"></i> Generating...</span>
-            </button>
-        </div>
+                <label>Metadata Language</label>
+                <input type="text" x-model="langSearch" placeholder="Search language (e.g. en, it, fr)...">
+                <select x-model="selectedLang">
+                    <template x-for="l in filteredLangs" :key="l.code">
+                        <option :value="l.code" :selected="l.code === selectedLang" x-text="l.name"></option>
+                    </template>
+                </select>
 
-        <div x-show="step === 3" style="display: none;" x-transition.opacity>
-            <div class="success-text">
-                <i class="fas fa-check-circle" style="font-size: 30px; margin-bottom: 10px;"></i><br>
-                Addon generated successfully!
+                <p class="error" x-show="!syncAll && selectedLists.length === 0">Please select at least one list.</p>
+                <p class="error" x-show="error" x-text="error"></p>
+
+                <button class="btn-generate" :disabled="loading || (!syncAll && selectedLists.length === 0)" @click="generateLinks()">
+                    <span x-show="!loading"><i class="fas fa-cogs"></i> Generate Addon Links</span>
+                    <span x-show="loading"><i class="fas fa-spinner fa-spin"></i> Generating...</span>
+                </button>
             </div>
 
-            <label>Manifest URL (HTTPS)</label>
-            <input type="text" x-model="manifestUrl" readonly @click="$el.select()">
+            <div x-show="step === 3" style="display: none;" x-transition.opacity>
+                <div class="success-text">
+                    <i class="fas fa-check-circle" style="font-size: 30px; margin-bottom: 10px;"></i><br>
+                    Addon generated successfully!
+                </div>
 
-            <button class="btn-copy" :class="copied ? 'copied' : ''" @click="copyLink()">
-                <span x-show="!copied"><i class="fas fa-copy"></i> Copy Link</span>
-                <span x-show="copied"><i class="fas fa-check"></i> Copied to clipboard!</span>
-            </button>
+                <label>Manifest URL (HTTPS)</label>
+                <input type="text" x-model="manifestUrl" readonly @click="$el.select()">
 
-            <a :href="stremioUrl" class="btn btn-install">
-                <i class="fas fa-download"></i> Install on Stremio
-            </a>
+                <button class="btn-copy" :class="copied ? 'copied' : ''" @click="copyLink()">
+                    <span x-show="!copied"><i class="fas fa-copy"></i> Copy Link</span>
+                    <span x-show="copied"><i class="fas fa-check"></i> Copied to clipboard!</span>
+                </button>
 
-            <button class="btn-back" @click="step = 2; copied = false">
-                <i class="fas fa-arrow-left"></i> Back to configuration
-            </button>
-        </div>
-
-        <div class="footer">
-            <p>
-                <a class="hf-link" href="https://huggingface.co/spaces/<%= spacePath %>" target="_blank">
-                    <i class="fa-solid fa-code"></i> View Source Code
+                <a :href="stremioUrl" class="btn btn-install">
+                    <i class="fas fa-download"></i> Install on Stremio
                 </a>
-            </p>
-            <p>Released under <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a></p>
-            <p style="font-size: 10px; margin-top: 10px; opacity: 0.7;">
-                DISCLAIMER: This tool is a third-party open-source project and is NOT affiliated with or endorsed by MDBList.com.
-            </p>
+
+                <button class="btn-back" @click="step = 2; copied = false">
+                    <i class="fas fa-arrow-left"></i> Back to configuration
+                </button>
+            </div>
+
+            <div class="footer">
+                <p>
+                    <a class="hf-link" href="https://huggingface.co/spaces/<%= spacePath %>" target="_blank">
+                        <i class="fa-solid fa-code"></i> View Source Code
+                    </a>
+                </p>
+                <p>Released under <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a></p>
+                <p style="font-size: 10px; margin-top: 10px; opacity: 0.7;">
+                    DISCLAIMER: This tool is a third-party open-source project and is NOT affiliated with or endorsed by MDBList.com.
+                </p>
+            </div>
         </div>
-    </div>
+    </div> <!-- Fine blocco .hero -->
 
 <script>
     const canvas = document.getElementById('starCanvas');

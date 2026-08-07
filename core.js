@@ -5,6 +5,10 @@ const algorithm = 'aes-256-cbc';
 const secretPassword = process.env.ENCRYPTION_KEY || 'FallbackSicurezzaTemporaneo2026!';
 const key = crypto.createHash('sha256').update(String(secretPassword)).digest();
 
+// Cache in memoria per le chiamate TMDB (TTL: 12 ore)
+const tmdbMemoryCache = new Map();
+const CACHE_TTL = 12 * 60 * 60 * 1000;
+
 function encrypt(text) {
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv(algorithm, key, iv);
@@ -50,6 +54,14 @@ function mdbToStremio(obj) {
 
 function getFullTmdbData(imdbId, stremioType, tmdbKey, lang) {
     return new Promise((resolve) => {
+        const cacheKey = `${imdbId}_${stremioType}_${lang}`;
+        const cached = tmdbMemoryCache.get(cacheKey);
+
+        // Se presente in cache ed è ancora valido, lo restituisce subito
+        if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+            return resolve(cached.data);
+        }
+
         const tmdbType = stremioType === 'series' ? 'tv' : 'movie';
         const findUrl = `https://api.themoviedb.org/3/find/${imdbId}?api_key=${tmdbKey}&external_source=imdb_id&language=${lang}`;
 
@@ -80,35 +92,13 @@ function getFullTmdbData(imdbId, stremioType, tmdbKey, lang) {
                     if (ytVideo) trailerId = ytVideo.key;
                 }
 
-                // --- CONTROLLO TRADUZIONE REALE ---
-                const targetLang = lang.split('-')[0]; // es. 'it'
+                // Controllo traduzioni originale
+                const targetLang = lang.split('-')[0];
+                const hasTranslation = (dBody.translations && dBody.translations.translations) 
+                    ? dBody.translations.translations.some(t => t.iso_639_1 === targetLang)
+                    : true;
 
-                // 1. Produzione originale nella lingua richiesta (es. film italiano)
-                const isOriginalLanguage = dBody.original_language === targetLang;
-
-                // 2. Trama (overview) in italiano restituita da TMDB e non vuota
-                const hasOverview = Boolean(dBody.overview && dBody.overview.trim().length > 0);
-
-                // 3. Verifica nel blocco traduzioni: deve esserci una trama tradotta O un titolo tradotto DIVERSO da quello originale
-                let hasRealTranslation = false;
-                if (dBody.translations && Array.isArray(dBody.translations.translations)) {
-                    const trans = dBody.translations.translations.find(t => t.iso_639_1 === targetLang);
-                    if (trans && trans.data) {
-                        const translatedOverview = trans.data.overview ? trans.data.overview.trim() : "";
-                        const translatedTitle = trans.data.title || trans.data.name || "";
-                        const originalTitle = dBody.original_title || dBody.original_name || "";
-
-                        hasRealTranslation = Boolean(
-                            translatedOverview.length > 0 ||
-                            (translatedTitle.length > 0 && originalTitle.length > 0 && translatedTitle.toLowerCase() !== originalTitle.toLowerCase())
-                        );
-                    }
-                }
-
-                // Un contenuto passa solo se ha una traduzione dimostrata
-                const hasTranslation = isOriginalLanguage || hasOverview || hasRealTranslation;
-
-                resolve({
+                const resultData = {
                     name: dBody.title || dBody.name,
                     description: dBody.overview || "Nessuna trama disponibile.",
                     poster: dBody.poster_path ? `https://image.tmdb.org/t/p/w500${dBody.poster_path}` : null,
@@ -118,7 +108,11 @@ function getFullTmdbData(imdbId, stremioType, tmdbKey, lang) {
                     director: director,
                     trailer: trailerId,
                     hasTranslation: hasTranslation
-                });
+                };
+
+                // Salva in cache
+                tmdbMemoryCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
+                resolve(resultData);
             });
         });
     });

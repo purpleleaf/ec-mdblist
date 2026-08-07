@@ -29,7 +29,7 @@ app.get(['/', '/configure'], (req, res) => {
             lang: 'en-US',
             allLists: true,
             search: false,
-            strictLanguage: false,
+            strictLanguage: true,
             lists: '[]'
         }
     });
@@ -51,7 +51,7 @@ app.get('/get-lists', (req, res) => {
                 lists: lists.map(l => ({ 
                     id: String(l.id || l.slug), 
                     name: l.name,
-                    mediatype: l.mediatype || l.type || 'mixed' // Cattura tipo lista: movie, show, mixed
+                    mediatype: l.mediatype || l.type || 'mixed'
                 })) 
             });
         });
@@ -119,7 +119,7 @@ app.get('/:token/configure', (req, res) => {
             lang: config.lang || 'en-US', 
             allLists: config.allLists !== undefined ? config.allLists : true,
             search: config.search !== undefined ? config.search : false,
-            strictLanguage: config.strictLanguage !== undefined ? config.strictLanguage : false,
+            strictLanguage: config.strictLanguage !== undefined ? config.strictLanguage : true,
             lists: config.lists ? JSON.stringify(config.lists) : '[]'
         }
     });
@@ -145,13 +145,10 @@ app.get('/:token/manifest.json', (req, res) => {
             const media = (l.mediatype || l.type || 'mixed').toLowerCase();
 
             if (media === 'movie' || media === 'movies') {
-                // Solo 1 riga nei Film
                 catalogs.push({ id: `mdb-${l.id}`, type: "movie", name: l.name, extra: catalogExtra });
             } else if (media === 'show' || media === 'shows' || media === 'series' || media === 'tv') {
-                // Solo 1 riga nelle Serie TV
                 catalogs.push({ id: `mdb-${l.id}`, type: "series", name: l.name, extra: catalogExtra });
             } else {
-                // Liste MISTE: crea entrambe le righe per smistare su Stremio
                 catalogs.push({ id: `mdb-${l.id}`, type: "movie", name: l.name, extra: catalogExtra });
                 catalogs.push({ id: `mdb-${l.id}`, type: "series", name: l.name, extra: catalogExtra });
             }
@@ -189,11 +186,10 @@ app.get('/:token/manifest.json', (req, res) => {
 function processItems(items, type, skip, config, res) {
     let stremioItems = items.map(core.mdbToStremio).filter(i => i && i.type === type);
     stremioItems = Array.from(new Map(stremioItems.map(item => [item.id, item])).values());
-    
-    const page = stremioItems.slice(skip, skip + 30);
-    if (page.length === 0) return res.json({ metas: [] });
 
-    Promise.all(page.map(item => {
+    if (stremioItems.length === 0) return res.json({ metas: [] });
+
+    Promise.all(stremioItems.map(item => {
         return core.getFullTmdbData(item.id, item.type, config.tmdbKey, config.lang).then(tmdbData => {
             if (tmdbData) {
                 if (config.strictLanguage && !tmdbData.hasTranslation) {
@@ -216,12 +212,17 @@ function processItems(items, type, skip, config, res) {
                 }
                 if (metaLinks.length > 0) item.links = metaLinks;
                 if (tmdbData.trailer) item.trailers = [{ source: tmdbData.trailer, type: "Trailer" }];
+                
+                return item;
             }
-            return item;
+            return null;
         });
-    })).then(metas => {
+    })).then(allMetas => {
+        const validMetas = allMetas.filter(m => m !== null);
+        const page = validMetas.slice(skip, skip + 30);
+
         res.setHeader('Cache-Control', 'no-cache');
-        res.json({ metas: metas.filter(m => m !== null) });
+        res.json({ metas: page });
     });
 }
 

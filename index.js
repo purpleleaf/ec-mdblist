@@ -191,7 +191,7 @@ async function processItems(items, type, skip, config, res) {
 
     const targetCount = skip + 30;
     const validMetas = [];
-    const BATCH_SIZE = 20; // Blocchi leggeri da 20 alla volta
+    const BATCH_SIZE = 20; // Elabora a blocchi leggeri da 20 alla volta
 
     for (let i = 0; i < stremioItems.length; i += BATCH_SIZE) {
         const chunk = stremioItems.slice(i, i + BATCH_SIZE);
@@ -238,10 +238,13 @@ async function processItems(items, type, skip, config, res) {
     }
 
     const page = validMetas.slice(skip, skip + 30);
-    res.setHeader('Cache-Control', 'no-cache');
+    
+    // Header Cache Ibrido (Stremio + CDN Vercel)
+    // ==========================================
+    res.setHeader('Cache-Control', 'public, max-age=43200, s-maxage=86400, stale-while-revalidate=7200');
+    
     res.json({ metas: page });
 }
-
 const catalogHandler = (req, res) => {
     const config = core.decrypt(req.params.token);
     if (!config) return res.json({ metas: [] });

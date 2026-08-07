@@ -57,7 +57,6 @@ function getFullTmdbData(imdbId, stremioType, tmdbKey, lang) {
         const cacheKey = `${imdbId}_${stremioType}_${lang}`;
         const cached = tmdbMemoryCache.get(cacheKey);
 
-        // Se il dato è in cache da meno di 24 ore, lo restituisce all'istante
         if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
             return resolve(cached.data);
         }
@@ -92,7 +91,6 @@ function getFullTmdbData(imdbId, stremioType, tmdbKey, lang) {
                     if (ytVideo) trailerId = ytVideo.key;
                 }
 
-                // Controllo traduzioni
                 const targetLang = lang.split('-')[0];
                 const hasTranslation = (dBody.translations && dBody.translations.translations) 
                     ? dBody.translations.translations.some(t => t.iso_639_1 === targetLang)
@@ -110,7 +108,6 @@ function getFullTmdbData(imdbId, stremioType, tmdbKey, lang) {
                     hasTranslation: hasTranslation
                 };
 
-                // Salva in cache per 24 ore
                 tmdbMemoryCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
                 resolve(resultData);
             });

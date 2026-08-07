@@ -183,14 +183,21 @@ app.get('/:token/manifest.json', (req, res) => {
 // 3. LOGICA DI ELABORAZIONE E API HANDLERS
 // ==========================================
 
-function processItems(items, type, skip, config, res) {
+async function processItems(items, type, skip, config, res) {
     let stremioItems = items.map(core.mdbToStremio).filter(i => i && i.type === type);
     stremioItems = Array.from(new Map(stremioItems.map(item => [item.id, item])).values());
 
     if (stremioItems.length === 0) return res.json({ metas: [] });
 
-    Promise.all(stremioItems.map(item => {
-        return core.getFullTmdbData(item.id, item.type, config.tmdbKey, config.lang).then(tmdbData => {
+    const targetCount = skip + 30;
+    const validMetas = [];
+    const BATCH_SIZE = 20; // Blocchi leggeri da 20 alla volta
+
+    for (let i = 0; i < stremioItems.length; i += BATCH_SIZE) {
+        const chunk = stremioItems.slice(i, i + BATCH_SIZE);
+        
+        const chunkResults = await Promise.all(chunk.map(async (item) => {
+            const tmdbData = await core.getFullTmdbData(item.id, item.type, config.tmdbKey, config.lang);
             if (tmdbData) {
                 if (config.strictLanguage && !tmdbData.hasTranslation) {
                     return null;
@@ -216,14 +223,23 @@ function processItems(items, type, skip, config, res) {
                 return item;
             }
             return null;
-        });
-    })).then(allMetas => {
-        const validMetas = allMetas.filter(m => m !== null);
-        const page = validMetas.slice(skip, skip + 30);
+        }));
 
-        res.setHeader('Cache-Control', 'no-cache');
-        res.json({ metas: page });
-    });
+        for (const resItem of chunkResults) {
+            if (resItem !== null) {
+                validMetas.push(resItem);
+            }
+        }
+
+        // Si interrompe non appena raccoglie abbastanza elementi per la pagina richiesta
+        if (validMetas.length >= targetCount) {
+            break;
+        }
+    }
+
+    const page = validMetas.slice(skip, skip + 30);
+    res.setHeader('Cache-Control', 'no-cache');
+    res.json({ metas: page });
 }
 
 const catalogHandler = (req, res) => {

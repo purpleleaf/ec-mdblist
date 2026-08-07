@@ -29,6 +29,7 @@ app.get(['/', '/configure'], (req, res) => {
             lang: 'en-US',
             allLists: true,
             search: false,
+            strictLanguage: false,
             lists: '[]'
         }
     });
@@ -51,14 +52,15 @@ app.get('/get-lists', (req, res) => {
 });
 
 app.get('/generate', (req, res) => {
-    const { mdb, tmdb, lang, lists, all, search } = req.query;
+    const { mdb, tmdb, lang, lists, all, search, strict } = req.query;
     
     const configData = {
         mdbKey: mdb.trim(),
         tmdbKey: tmdb.trim(),
         lang: lang || 'en-US',
         allLists: all === 'true',
-        search: search === 'true'
+        search: search === 'true',
+        strictLanguage: strict === 'true'
     };
 
     if (all !== 'true') {
@@ -110,6 +112,7 @@ app.get('/:token/configure', (req, res) => {
             lang: config.lang || 'en-US', 
             allLists: config.allLists !== undefined ? config.allLists : true,
             search: config.search !== undefined ? config.search : false,
+            strictLanguage: config.strictLanguage !== undefined ? config.strictLanguage : false,
             lists: config.lists ? JSON.stringify(config.lists) : '[]'
         }
     });
@@ -175,6 +178,11 @@ function processItems(items, type, skip, config, res) {
     Promise.all(page.map(item => {
         return core.getFullTmdbData(item.id, item.type, config.tmdbKey, config.lang).then(tmdbData => {
             if (tmdbData) {
+                // Filtro rigoroso per lingua
+                if (config.strictLanguage && !tmdbData.hasTranslation) {
+                    return null;
+                }
+
                 item.name = tmdbData.name || item.name;
                 item.description = tmdbData.description || item.description;
                 item.poster = tmdbData.poster || item.poster;
@@ -196,7 +204,8 @@ function processItems(items, type, skip, config, res) {
         });
     })).then(metas => {
         res.setHeader('Cache-Control', 'no-cache');
-        res.json({ metas });
+        // Rimuove i risultati null filtrati
+        res.json({ metas: metas.filter(m => m !== null) });
     });
 }
 

@@ -60,7 +60,8 @@ function getFullTmdbData(imdbId, stremioType, tmdbKey, lang) {
             if (!results || results.length === 0) return resolve(null);
 
             const tmdbId = results[0].id;
-            const detailUrl = `https://api.themoviedb.org/3/${tmdbType}/${tmdbId}?api_key=${tmdbKey}&language=${lang}&append_to_response=credits,videos`;
+            // Aggiunto "translations" ad append_to_response
+            const detailUrl = `https://api.themoviedb.org/3/${tmdbType}/${tmdbId}?api_key=${tmdbKey}&language=${lang}&append_to_response=credits,videos,translations`;
             
             needle.get(detailUrl, (dErr, dResp, dBody) => {
                 if (dErr || dResp.statusCode !== 200 || !dBody) return resolve(null);
@@ -80,6 +81,12 @@ function getFullTmdbData(imdbId, stremioType, tmdbKey, lang) {
                     if (ytVideo) trailerId = ytVideo.key;
                 }
 
+                // Controllo traduzioni
+                const targetLang = lang.split('-')[0];
+                const hasTranslation = (dBody.translations && dBody.translations.translations) 
+                    ? dBody.translations.translations.some(t => t.iso_639_1 === targetLang)
+                    : true; // Fallback di sicurezza se la risposta è anomala
+
                 resolve({
                     name: dBody.title || dBody.name,
                     description: dBody.overview || "Nessuna trama disponibile.",
@@ -88,14 +95,14 @@ function getFullTmdbData(imdbId, stremioType, tmdbKey, lang) {
                     genres: genres,
                     cast: cast,
                     director: director,
-                    trailer: trailerId
+                    trailer: trailerId,
+                    hasTranslation: hasTranslation
                 });
             });
         });
     });
 }
 
-// Esportiamo le funzioni per renderle disponibili a index.js
 module.exports = {
     encrypt,
     decrypt,

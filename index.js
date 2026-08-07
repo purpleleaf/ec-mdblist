@@ -46,7 +46,14 @@ app.get('/get-lists', (req, res) => {
             if (errMdb || respMdb.statusCode !== 200 || bodyMdb.error) return res.json({ valid: false, error: "Invalid MDBList Key" });
             
             const lists = Array.isArray(bodyMdb) ? bodyMdb : (bodyMdb.lists || []);
-            res.json({ valid: true, lists: lists.map(l => ({ id: String(l.id || l.slug), name: l.name })) });
+            res.json({ 
+                valid: true, 
+                lists: lists.map(l => ({ 
+                    id: String(l.id || l.slug), 
+                    name: l.name,
+                    mediatype: l.mediatype || l.type || 'mixed' // Cattura tipo lista: movie, show, mixed
+                })) 
+            });
         });
     });
 });
@@ -135,8 +142,19 @@ app.get('/:token/manifest.json', (req, res) => {
         catalogs.push({ id: "mdb-all-series", type: "series", name: "MDBList All Series", extra: catalogExtra });
     } else if (config.lists && config.lists.length > 0) {
         config.lists.forEach(l => {
-            catalogs.push({ id: `mdb-${l.id}`, type: "movie", name: l.name, extra: catalogExtra });
-            catalogs.push({ id: `mdb-${l.id}`, type: "series", name: l.name, extra: catalogExtra });
+            const media = (l.mediatype || l.type || 'mixed').toLowerCase();
+
+            if (media === 'movie' || media === 'movies') {
+                // Solo 1 riga nei Film
+                catalogs.push({ id: `mdb-${l.id}`, type: "movie", name: l.name, extra: catalogExtra });
+            } else if (media === 'show' || media === 'shows' || media === 'series' || media === 'tv') {
+                // Solo 1 riga nelle Serie TV
+                catalogs.push({ id: `mdb-${l.id}`, type: "series", name: l.name, extra: catalogExtra });
+            } else {
+                // Liste MISTE: crea entrambe le righe per smistare su Stremio
+                catalogs.push({ id: `mdb-${l.id}`, type: "movie", name: l.name, extra: catalogExtra });
+                catalogs.push({ id: `mdb-${l.id}`, type: "series", name: l.name, extra: catalogExtra });
+            }
         });
     }
 
@@ -178,7 +196,6 @@ function processItems(items, type, skip, config, res) {
     Promise.all(page.map(item => {
         return core.getFullTmdbData(item.id, item.type, config.tmdbKey, config.lang).then(tmdbData => {
             if (tmdbData) {
-                // Filtro rigoroso per lingua
                 if (config.strictLanguage && !tmdbData.hasTranslation) {
                     return null;
                 }
@@ -204,7 +221,6 @@ function processItems(items, type, skip, config, res) {
         });
     })).then(metas => {
         res.setHeader('Cache-Control', 'no-cache');
-        // Rimuove i risultati null filtrati
         res.json({ metas: metas.filter(m => m !== null) });
     });
 }

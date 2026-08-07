@@ -60,7 +60,6 @@ function getFullTmdbData(imdbId, stremioType, tmdbKey, lang) {
             if (!results || results.length === 0) return resolve(null);
 
             const tmdbId = results[0].id;
-            // Aggiunto "translations" ad append_to_response
             const detailUrl = `https://api.themoviedb.org/3/${tmdbType}/${tmdbId}?api_key=${tmdbKey}&language=${lang}&append_to_response=credits,videos,translations`;
             
             needle.get(detailUrl, (dErr, dResp, dBody) => {
@@ -81,11 +80,30 @@ function getFullTmdbData(imdbId, stremioType, tmdbKey, lang) {
                     if (ytVideo) trailerId = ytVideo.key;
                 }
 
-                // Controllo traduzioni
-                const targetLang = lang.split('-')[0];
-                const hasTranslation = (dBody.translations && dBody.translations.translations) 
-                    ? dBody.translations.translations.some(t => t.iso_639_1 === targetLang)
-                    : true; // Fallback di sicurezza se la risposta è anomala
+                // --- CONTROLLO TRADUZIONI CORRETTO E ROBUSTO ---
+                const targetLang = lang.split('-')[0]; // es. 'it'
+
+                // 1. È una produzione originale nella lingua richiesta?
+                const isOriginalLanguage = dBody.original_language === targetLang;
+
+                // 2. TMDB ha restituito una trama non vuota nella lingua richiesta?
+                const hasOverview = Boolean(dBody.overview && dBody.overview.trim().length > 0);
+
+                // 3. Esiste un blocco traduzione valido con titolo o trama compilati?
+                let hasTranslationData = false;
+                if (dBody.translations && Array.isArray(dBody.translations.translations)) {
+                    const trans = dBody.translations.translations.find(t => t.iso_639_1 === targetLang);
+                    if (trans && trans.data) {
+                        hasTranslationData = Boolean(
+                            (trans.data.overview && trans.data.overview.trim().length > 0) ||
+                            (trans.data.title && trans.data.title.trim().length > 0) ||
+                            (trans.data.name && trans.data.name.trim().length > 0)
+                        );
+                    }
+                }
+
+                // Il contenuto è valido se rispetta almeno uno dei tre criteri
+                const hasTranslation = isOriginalLanguage || hasOverview || hasTranslationData;
 
                 resolve({
                     name: dBody.title || dBody.name,

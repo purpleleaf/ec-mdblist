@@ -5,9 +5,9 @@ const algorithm = 'aes-256-cbc';
 const secretPassword = process.env.ENCRYPTION_KEY || 'FallbackSicurezzaTemporaneo2026!';
 const key = crypto.createHash('sha256').update(String(secretPassword)).digest();
 
-// Cache in memoria per le chiamate TMDB (TTL: 12 ore)
+// Cache in memoria per le chiamate TMDB (TTL: 24 ore)
 const tmdbMemoryCache = new Map();
-const CACHE_TTL = 12 * 60 * 60 * 1000;
+const CACHE_TTL = 24 * 60 * 60 * 1000;
 
 function encrypt(text) {
     const iv = crypto.randomBytes(16);
@@ -57,7 +57,7 @@ function getFullTmdbData(imdbId, stremioType, tmdbKey, lang) {
         const cacheKey = `${imdbId}_${stremioType}_${lang}`;
         const cached = tmdbMemoryCache.get(cacheKey);
 
-        // Se presente in cache ed è ancora valido, lo restituisce subito
+        // Se il dato è in cache da meno di 24 ore, lo restituisce all'istante
         if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
             return resolve(cached.data);
         }
@@ -92,7 +92,7 @@ function getFullTmdbData(imdbId, stremioType, tmdbKey, lang) {
                     if (ytVideo) trailerId = ytVideo.key;
                 }
 
-                // Controllo traduzioni originale
+                // Controllo traduzioni
                 const targetLang = lang.split('-')[0];
                 const hasTranslation = (dBody.translations && dBody.translations.translations) 
                     ? dBody.translations.translations.some(t => t.iso_639_1 === targetLang)
@@ -110,7 +110,7 @@ function getFullTmdbData(imdbId, stremioType, tmdbKey, lang) {
                     hasTranslation: hasTranslation
                 };
 
-                // Salva in cache
+                // Salva in cache per 24 ore
                 tmdbMemoryCache.set(cacheKey, { timestamp: Date.now(), data: resultData });
                 resolve(resultData);
             });

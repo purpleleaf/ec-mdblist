@@ -33,7 +33,7 @@
             overflow-x: hidden;
         }
 
-        /* --- LIVELLO 1: LO SFONDO (Bloccato dietro) --- */
+        /* --- LIVELLO 1: LO SFONDO --- */
         .background-layer {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -56,7 +56,6 @@
             z-index: 2;
         }
         
-        /* Fa in modo che l'SVG riempia il div .castle */
         .castle svg {
             width: 100%;
             height: 100%;
@@ -77,7 +76,7 @@
             }
         }
 
-        /* --- LIVELLO 2: IL CONTENUTO (Sopra lo sfondo) --- */
+        /* --- LIVELLO 2: IL CONTENUTO --- */
         .content-layer {
             position: relative;
             z-index: 10;
@@ -195,7 +194,6 @@
 </head>
 <body x-data="setup()">
 
-    <!-- LIVELLO 1: Sfondo isolato -->
     <div class="background-layer">
         <canvas id="starCanvas"></canvas>
         <div class="castle">
@@ -207,7 +205,6 @@
         <div class="base-block"></div>
     </div>
 
-    <!-- LIVELLO 2: Contenuto centrale -->
     <div class="content-layer">
         <div class="container">
             <div class="header">
@@ -215,6 +212,7 @@
                 <p><i class="fas fa-magic"></i> Unofficial Metadata Addon</p>
             </div>
 
+            <!-- STEP 1 -->
             <div x-show="step === 1" x-transition.opacity>
                 <label>MDBList API Key</label>
                 <input type="text" x-model="mdbKey" placeholder="Paste your MDBList key">
@@ -229,6 +227,7 @@
                 </button>
             </div>
 
+            <!-- STEP 2 -->
             <div x-show="step === 2" style="display: none;" x-transition.opacity>
                 <label>Addon Features</label>
                 <div class="switch-container" :class="enableSearch ? 'active' : ''">
@@ -299,6 +298,7 @@
                 </button>
             </div>
 
+            <!-- STEP 3 -->
             <div x-show="step === 3" style="display: none;" x-transition.opacity>
                 <div class="success-text">
                     <i class="fas fa-check-circle" style="font-size: 30px; margin-bottom: 10px;"></i><br>
@@ -461,491 +461,6 @@
                 const listsParam = encodeURIComponent(JSON.stringify(listData));
                 
                 const url = `/generate?mdb=${encodeURIComponent(this.mdbKey.trim())}&tmdb=${encodeURIComponent(this.tmdbKey.trim())}&lang=${this.selectedLang}&all=${this.syncAll}&search=${this.enableSearch}&strict=${this.strictLanguage}&lists=${listsParam}`;
-                
-                try {
-                    const res = await fetch(url);
-                    const data = await res.json();
-                    
-                    if (data.token) {
-                        const host = window.location.host;
-                        const protocol = window.location.protocol;
-                        
-                        this.manifestUrl = `${protocol}//${host}/${data.token}/manifest.json`;
-                        this.stremioUrl = `stremio://${host}/${data.token}/manifest.json`;
-                        
-                        this.step = 3;
-                    } else {
-                        this.error = "Failed to generate token.";
-                    }
-                } catch (e) {
-                    this.error = "Error communicating with server.";
-                } finally {
-                    this.loading = false;
-                }
-            },
-
-            async copyLink() {
-                try {
-                    await navigator.clipboard.writeText(this.manifestUrl);
-                    this.copied = true;
-                    setTimeout(() => this.copied = false, 2500);
-                } catch (err) {
-                    alert("Failed to copy link to clipboard.");
-                }
-            }
-        }
-    }
-</script>
-</body>
-</html><!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="dark">
-    <title>MDBList Translator</title>
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <style>
-        :root {
-            --bg: #282a36;
-            --current: #44475a;
-            --fg: #f8f8f2;
-            --comment: #6272a4;
-            --cyan: #8be9fd;
-            --green: #50fa7b;
-            --orange: #ffb86c;
-            --pink: #ff79c6;
-            --purple: #bd93f9;
-            --red: #ff5555;
-            --yellow: #f1fa8c;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #191625;
-            color: var(--fg);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow-y: auto;
-            overflow-x: hidden;
-        }
-
-        /* --- LIVELLO 1: LO SFONDO (Bloccato dietro) --- */
-        .background-layer {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-image: linear-gradient(to bottom, #191625, #544987);
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        #starCanvas {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 1;
-        }
-
-        .castle {
-            position: absolute;
-            bottom: 45px; left: 0;
-            width: 100%; height: 100%;
-            z-index: 2;
-        }
-        
-        /* Fa in modo che l'SVG riempia il div .castle */
-        .castle svg {
-            width: 100%;
-            height: 100%;
-        }
-
-        .base-block {
-            position: absolute;
-            bottom: 0; left: 0;
-            width: 100%; height: 50px;
-            background-color: #0d0d11; 
-            z-index: 3;
-        }
-
-        @media (max-width: 60rem) {
-            .castle {
-                width: 402%;
-                left: -234%;
-            }
-        }
-
-        /* --- LIVELLO 2: IL CONTENUTO (Sopra lo sfondo) --- */
-        .content-layer {
-            position: relative;
-            z-index: 10;
-            min-height: 100dvh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 40px 0;
-            box-sizing: border-box;
-        }
-
-        .container {
-            background: rgba(30, 32, 44, 0.8); 
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            width: 90%; 
-            max-width: 450px;
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
-            border: 1px solid rgba(139, 233, 253, 0.12);
-            box-sizing: border-box; 
-        }
-
-        @media (max-width: 480px) {
-            #starCanvas { display: none; }
-            .content-layer { padding: 20px 0; }
-            .container {
-                width: 95%;
-                padding: 25px 20px;
-            }
-            .header h1 {
-                font-size: 24px; 
-            }
-        }
-
-        /* --- STILI DEL FORM --- */
-        .header { text-align: center; margin-bottom: 30px; }
-        .header h1 { color: var(--purple); margin: 0; font-size: 28px; letter-spacing: 1px; }
-        .header p { color: var(--cyan); font-size: 14px; margin-top: 5px; opacity: 0.9; }
-
-        label { display: block; margin-top: 20px; color: var(--pink); font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
-
-        input[type="text"], select {
-            width: 100%;
-            padding: 12px;
-            margin-top: 8px;
-            background: rgba(40, 42, 54, 0.8);
-            border: 2px solid var(--current);
-            border-radius: 8px;
-            color: var(--fg);
-            box-sizing: border-box;
-            outline: none;
-            transition: all 0.3s;
-            font-size: 14px;
-        }
-        input:focus, select:focus { border-color: var(--pink); }
-        input[readonly] { color: var(--cyan); background: rgba(0,0,0,0.3); border-color: transparent; cursor: default; }
-
-        .switch-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(40, 42, 54, 0.6);
-            padding: 14px 16px;
-            border-radius: 10px;
-            margin-top: 10px;
-            border: 1px solid transparent;
-            transition: all 0.3s ease;
-        }
-        .switch-container.active { border-color: var(--green); box-shadow: 0 0 10px rgba(80, 250, 123, 0.15); }
-
-        .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--comment); transition: .4s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--green); }
-        input:checked + .slider:before { transform: translateX(22px); }
-
-        #listsScroll { margin-top: 10px; max-height: 220px; overflow-y: auto; border-radius: 10px; background: rgba(0,0,0,0.3); padding: 10px; }
-        #listsScroll::-webkit-scrollbar { width: 6px; }
-        #listsScroll::-webkit-scrollbar-thumb { background: var(--current); border-radius: 10px; }
-
-        button, a.btn {
-            display: block; width: 100%; padding: 15px; margin-top: 20px; border: none; border-radius: 10px; 
-            font-weight: bold; font-size: 16px; cursor: pointer; transition: all 0.3s; text-align: center; text-decoration: none; box-sizing: border-box;
-        }
-        .btn-verify { background: var(--cyan); color: var(--bg); }
-        .btn-verify:hover:not(:disabled) { background: #9cf0ff; transform: translateY(-2px); }
-
-        .btn-generate { background: var(--purple); color: var(--bg); }
-        .btn-generate:hover:not(:disabled) { background: #d3b3ff; transform: translateY(-2px); }
-
-        .btn-install { background: var(--green); color: var(--bg); }
-        .btn-install:hover { background: #69ff8f; transform: translateY(-2px); }
-
-        .btn-copy { background: var(--current); color: var(--fg); border: 1px solid var(--comment); }
-        .btn-copy:hover { background: var(--comment); transform: translateY(-2px); }
-        .btn-copy.copied { background: var(--orange); color: var(--bg); border-color: transparent; }
-
-        .btn-back { background: transparent; color: rgba(248, 248, 242, 0.5); margin-top: 10px; padding: 10px; font-size: 14px; }
-        .btn-back:hover { color: var(--fg); }
-
-        button:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
-
-        .error { color: var(--red); font-size: 13px; text-align: center; margin-top: 15px; font-weight: bold; }
-        .success-text { color: var(--green); font-size: 14px; text-align: center; margin-top: 10px; margin-bottom: 20px; }
-
-        .footer { margin-top: 40px; text-align: center; font-size: 12px; color: rgba(248, 248, 242, 0.65); line-height: 1.6; }
-        .footer a { color: var(--pink); text-decoration: none; margin: 0 5px; transition: color 0.2s; font-weight: 500; }
-        .footer a:hover { color: var(--purple); text-decoration: underline; }
-        .hf-link { display: inline-flex; align-items: center; gap: 5px; color: var(--orange) !important; font-weight: bold; }
-    </style>
-</head>
-<body x-data="setup()">
-
-    <!-- LIVELLO 1: Sfondo isolato -->
-    <div class="background-layer">
-        <canvas id="starCanvas"></canvas>
-        <div class="castle">
-            <!-- IL TUO SVG INLINE -->
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2159 396" preserveAspectRatio="xMidYMax meet" fill="none">
-                <path fill="#0D0D11" d="M1670.5 384L2119.5 392.5L2084 382L2017 368.5L2006.5 358.5L1973.5 343.5L1975.5 279H1977.5L1973.5 260L1971.5 268.5L1965.5 255.5V250.5H1967.5L1963 241.5H1960.5V221H1963L1958 186L1952 221H1954V236.5L1913 222.5V199.5L1909.5 185L1901 119V112.5H1903.5V110.5H1901V106.5H1899V110.5H1897V112.5H1899V119L1896 185L1891.5 199.5V215.5L1836 196V175H1838L1832 146.5L1825 175H1826.5V214.5L1818 212V210H1820L1814.5 175L1816.5 171.5L1793.5 98.5L1793 85.5L1797.5 82V76L1802 73.5V53.5H1803.5L1800.5 43L1797.5 53.5L1795.5 48L1793 57L1791 53L1786.5 65.5L1788 67V79.5L1771 25L1769 0L1768 25L1718 171.5L1720 175V193.5L1723 196V198.5L1724.5 199.5V276L1723 277V282.5L1704.5 289.5L1705 263.5H1707.5L1690.5 189.5L1689.5 171.5V189.5L1670.5 263.5H1674.5L1670.5 384Z"/>
-                <path fill="#0D0D11" d="M199 383.86L117.5 391.279L0 396H2159L2070 385.209L2030.5 382.287L1956 378.915L1912 371.271L1870 368.798L1814.5 367C1786 369.698 1690.5 356 1684.5 356C1680.9 356 1661.33 369.698 1632 367L1555 368.798L1491 360L1459 363.5L1453.5 367L1430.5 371.271H1411.5L1312 375.093H1165.5L1059.5 371.271L952.5 367L878 371.271C850.833 372.545 794.6 375.093 787 375.093C779.4 375.093 693.833 369.698 652 367H591L513 375.093H310L275 380.488L199 383.86Z"/>
-            </svg>
-        </div>
-        <div class="base-block"></div>
-    </div>
-
-    <!-- LIVELLO 2: Contenuto centrale -->
-    <div class="content-layer">
-        <div class="container">
-            <div class="header">
-                <h1>MDBList Translator</h1>
-                <p><i class="fas fa-magic"></i> Unofficial Metadata Addon</p>
-            </div>
-
-            <div x-show="step === 1" x-transition.opacity>
-                <label>MDBList API Key</label>
-                <input type="text" x-model="mdbKey" placeholder="Paste your MDBList key">
-
-                <label>TMDB API Key</label>
-                <input type="text" x-model="tmdbKey" placeholder="Paste your TMDB key">
-
-                <p class="error" x-show="error" x-text="error"></p>
-                <button class="btn-verify" :disabled="loading" @click="verifyKeys()">
-                    <span x-show="!loading"><i class="fas fa-plug"></i> Connect to MDBList</span>
-                    <span x-show="loading"><i class="fas fa-spinner fa-spin"></i> Verifying...</span>
-                </button>
-            </div>
-
-            <div x-show="step === 2" style="display: none;" x-transition.opacity>
-                <label>Addon Features</label>
-                <div class="switch-container" :class="enableSearch ? 'active' : ''">
-                    <span style="font-size: 14px; font-weight: bold; color: var(--fg);">
-                        <i class="fas fa-search"></i> Enable TMDB Search
-                    </span>
-                    <label class="switch">
-                        <input type="checkbox" x-model="enableSearch">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <p style="font-size: 11px; color: var(--orange); margin-top: 5px; margin-bottom: 20px; line-height: 1.4;">
-                    <i class="fas fa-exclamation-triangle"></i> <strong>Note:</strong> Turn this on ONLY if you don't use the official TMDB addon or Cinemeta. Otherwise, you will see duplicate search rows.
-                </p>
-                
-                <label>Sync Strategy</label>
-                <div class="switch-container" :class="syncAll ? 'active' : ''">
-                    <span style="font-size: 14px; font-weight: bold; color: var(--fg);">
-                        <i class="fas fa-layer-group"></i> Sync All My Lists
-                    </span>
-                    <label class="switch">
-                        <input type="checkbox" x-model="syncAll">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-
-                <label x-show="!syncAll" x-transition>Select Individual Lists</label>
-                <div id="listsScroll" x-show="!syncAll" x-transition>
-                    <template x-for="list in lists" :key="list.id">
-                        <div class="switch-container">
-                            <span x-text="list.name" style="font-size: 13px; color: var(--fg);"></span>
-                            <label class="switch">
-                                <input type="checkbox" :value="list.id" x-model="selectedLists">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                    </template>
-                </div>
-
-                <label>Metadata Language</label>
-                <input type="text" x-model="langSearch" placeholder="Search language (e.g. en, it, fr)...">
-                <select x-model="selectedLang">
-                    <template x-for="l in filteredLangs" :key="l.code">
-                        <option :value="l.code" :selected="l.code === selectedLang" x-text="l.name"></option>
-                    </template>
-                </select>
-
-                <p class="error" x-show="!syncAll && selectedLists.length === 0">Please select at least one list.</p>
-                <p class="error" x-show="error" x-text="error"></p>
-
-                <button class="btn-generate" :disabled="loading || (!syncAll && selectedLists.length === 0)" @click="generateLinks()">
-                    <span x-show="!loading"><i class="fas fa-cogs"></i> Generate Addon Links</span>
-                    <span x-show="loading"><i class="fas fa-spinner fa-spin"></i> Generating...</span>
-                </button>
-            </div>
-
-            <div x-show="step === 3" style="display: none;" x-transition.opacity>
-                <div class="success-text">
-                    <i class="fas fa-check-circle" style="font-size: 30px; margin-bottom: 10px;"></i><br>
-                    Addon generated successfully!
-                </div>
-
-                <label>Manifest URL (HTTPS)</label>
-                <input type="text" x-model="manifestUrl" readonly @click="$el.select()">
-
-                <button class="btn-copy" :class="copied ? 'copied' : ''" @click="copyLink()">
-                    <span x-show="!copied"><i class="fas fa-copy"></i> Copy Link</span>
-                    <span x-show="copied"><i class="fas fa-check"></i> Copied to clipboard!</span>
-                </button>
-
-                <a :href="stremioUrl" class="btn btn-install">
-                    <i class="fas fa-download"></i> Install on Stremio
-                </a>
-
-                <button class="btn-back" @click="step = 2; copied = false">
-                    <i class="fas fa-arrow-left"></i> Back to configuration
-                </button>
-            </div>
-
-            <div class="footer">
-                <p>
-                    <a class="hf-link" href="https://github.com/purpleleaf/ec-mdblist" target="_blank">
-                        <i class="fa-solid fa-code"></i> View Source Code
-                    </a>
-                </p>
-                <p>Released under <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a></p>
-                <p style="font-size: 10px; margin-top: 10px; opacity: 0.7;">
-                    DISCLAIMER: This tool is a third-party open-source project and is NOT affiliated with or endorsed by MDBList.com.
-                </p>
-            </div>
-        </div>
-    </div>
-
-<script>
-    const canvas = document.getElementById('starCanvas');
-    const ctx = canvas.getContext('2d');
-
-    function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    const numberOfStars = 100;
-    const stars = [];
-
-    for (let i = 0; i < numberOfStars; i++) {
-        stars.push({
-            x: Math.random() * window.innerWidth,
-            y: Math.random() * window.innerHeight,
-            size: Math.random() * 1 + 0.5,
-            vx: (Math.random() - 0.5) * 0.25,
-            vy: (Math.random() - 0.5) * 0.25,
-            opacity: Math.random() * 0.6 + 0.4,
-            pulseSpeed: Math.random() * 0.02 + 0.005,
-            pulseFactor: Math.random() * Math.PI
-        });
-    }
-
-    function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        for (let i = 0; i < numberOfStars; i++) {
-            const s = stars[i];
-            s.x += s.vx;
-            s.y += s.vy;
-
-            if (s.x < 0 || s.x > canvas.width) s.vx *= -1;
-            if (s.y < 0 || s.y > canvas.height) s.vy *= -1;
-
-            s.pulseFactor += s.pulseSpeed;
-            const currentOpacity = s.opacity + Math.sin(s.pulseFactor) * 0.2;
-
-            ctx.beginPath();
-            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.1, Math.min(1, currentOpacity))})`;
-            ctx.fill();
-        }
-        requestAnimationFrame(animate);
-    }
-    animate();
-
-    function setup() {
-        const prefill = <%- JSON.stringify(prefill) %>;
-        const langs = <%- JSON.stringify(languages) %>;
-
-        return {
-            step: 1,
-            loading: false,
-            error: '',
-            mdbKey: prefill.mdbKey || '',
-            tmdbKey: prefill.tmdbKey || '',
-            lists: [],
-            selectedLists: [],
-            syncAll: prefill.allLists !== undefined ? prefill.allLists : true,
-            enableSearch: prefill.search !== undefined ? prefill.search : false,
-            langSearch: '',
-            selectedLang: prefill.lang || 'en-US',
-            languages: langs,
-            manifestUrl: '',
-            stremioUrl: '',
-            copied: false,
-
-            init() {
-                if (this.mdbKey && this.tmdbKey) {
-                    this.verifyKeys().then(() => {
-                        if (!this.syncAll && prefill.lists && prefill.lists !== '[]') {
-                            try {
-                                const savedLists = JSON.parse(prefill.lists);
-                                this.selectedLists = savedLists.map(l => String(l.id || l));
-                            } catch(e) {}
-                        }
-                    });
-                }
-            },
-
-            get filteredLangs() {
-                if (!this.langSearch) return this.languages;
-                const search = this.langSearch.toLowerCase();
-                return this.languages.filter(l => 
-                    l.name.toLowerCase().includes(search) || 
-                    l.code.toLowerCase().includes(search)
-                );
-            },
-
-            async verifyKeys() {
-                if (!this.mdbKey || !this.tmdbKey) {
-                    this.error = "Please provide both API keys.";
-                    return;
-                }
-                this.loading = true;
-                this.error = '';
-                try {
-                    const res = await fetch(`/get-lists?mdb=${encodeURIComponent(this.mdbKey.trim())}&tmdb=${encodeURIComponent(this.tmdbKey.trim())}`);
-                    const data = await res.json();
-                    if (data.valid) {
-                        this.lists = data.lists;
-                        this.step = 2;
-                    } else {
-                        this.error = data.error;
-                    }
-                } catch (e) {
-                    this.error = "Connection error. Please try again.";
-                } finally {
-                    this.loading = false;
-                }
-            },
-
-            async generateLinks() {
-                this.loading = true;
-                this.error = '';
-                
-                const listData = this.lists.filter(l => this.selectedLists.includes(String(l.id)));
-                const listsParam = encodeURIComponent(JSON.stringify(listData));
-                
-                const url = `/generate?mdb=${encodeURIComponent(this.mdbKey.trim())}&tmdb=${encodeURIComponent(this.tmdbKey.trim())}&lang=${this.selectedLang}&all=${this.syncAll}&search=${this.enableSearch}&lists=${listsParam}`;
                 
                 try {
                     const res = await fetch(url);

@@ -80,30 +80,33 @@ function getFullTmdbData(imdbId, stremioType, tmdbKey, lang) {
                     if (ytVideo) trailerId = ytVideo.key;
                 }
 
-                // --- CONTROLLO TRADUZIONI CORRETTO E ROBUSTO ---
+                // --- CONTROLLO TRADUZIONE REALE ---
                 const targetLang = lang.split('-')[0]; // es. 'it'
 
-                // 1. È una produzione originale nella lingua richiesta?
+                // 1. Produzione originale nella lingua richiesta (es. film italiano)
                 const isOriginalLanguage = dBody.original_language === targetLang;
 
-                // 2. TMDB ha restituito una trama non vuota nella lingua richiesta?
+                // 2. Trama (overview) in italiano restituita da TMDB e non vuota
                 const hasOverview = Boolean(dBody.overview && dBody.overview.trim().length > 0);
 
-                // 3. Esiste un blocco traduzione valido con titolo o trama compilati?
-                let hasTranslationData = false;
+                // 3. Verifica nel blocco traduzioni: deve esserci una trama tradotta O un titolo tradotto DIVERSO da quello originale
+                let hasRealTranslation = false;
                 if (dBody.translations && Array.isArray(dBody.translations.translations)) {
                     const trans = dBody.translations.translations.find(t => t.iso_639_1 === targetLang);
                     if (trans && trans.data) {
-                        hasTranslationData = Boolean(
-                            (trans.data.overview && trans.data.overview.trim().length > 0) ||
-                            (trans.data.title && trans.data.title.trim().length > 0) ||
-                            (trans.data.name && trans.data.name.trim().length > 0)
+                        const translatedOverview = trans.data.overview ? trans.data.overview.trim() : "";
+                        const translatedTitle = trans.data.title || trans.data.name || "";
+                        const originalTitle = dBody.original_title || dBody.original_name || "";
+
+                        hasRealTranslation = Boolean(
+                            translatedOverview.length > 0 ||
+                            (translatedTitle.length > 0 && originalTitle.length > 0 && translatedTitle.toLowerCase() !== originalTitle.toLowerCase())
                         );
                     }
                 }
 
-                // Il contenuto è valido se rispetta almeno uno dei tre criteri
-                const hasTranslation = isOriginalLanguage || hasOverview || hasTranslationData;
+                // Un contenuto passa solo se ha una traduzione dimostrata
+                const hasTranslation = isOriginalLanguage || hasOverview || hasRealTranslation;
 
                 resolve({
                     name: dBody.title || dBody.name,

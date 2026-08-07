@@ -79,7 +79,7 @@ app.get('/generate', (req, res) => {
 });
 
 // ==========================================
-// 2. ROTTE STREMIO (Addon Core)
+// 2. STREMIO ADDON ROUTES
 // ==========================================
 
 app.get('/manifest.json', (req, res) => {
@@ -180,7 +180,7 @@ app.get('/:token/manifest.json', (req, res) => {
 });
 
 // ==========================================
-// 3. LOGICA DI ELABORAZIONE E API HANDLERS
+// 3. PROCESSING LOGIC & CATALOG HANDLER
 // ==========================================
 
 async function processItems(items, type, skip, config, res) {
@@ -189,9 +189,10 @@ async function processItems(items, type, skip, config, res) {
 
     if (stremioItems.length === 0) return res.json({ metas: [] });
 
-    const targetCount = skip + 30;
+    let elementsToSkip = skip;
+    const PAGE_SIZE = 30;
     const validMetas = [];
-    const BATCH_SIZE = 20; // Elabora a blocchi leggeri da 20 alla volta
+    const BATCH_SIZE = 10;
 
     for (let i = 0; i < stremioItems.length; i += BATCH_SIZE) {
         const chunk = stremioItems.slice(i, i + BATCH_SIZE);
@@ -227,24 +228,23 @@ async function processItems(items, type, skip, config, res) {
 
         for (const resItem of chunkResults) {
             if (resItem !== null) {
-                validMetas.push(resItem);
+                if (elementsToSkip > 0) {
+                    elementsToSkip--;
+                } else {
+                    validMetas.push(resItem);
+                }
             }
         }
 
-        // Si interrompe non appena raccoglie abbastanza elementi per la pagina richiesta
-        if (validMetas.length >= targetCount) {
+        if (validMetas.length === PAGE_SIZE) {
             break;
         }
     }
 
-    const page = validMetas.slice(skip, skip + 30);
-    
-    // Header Cache Ibrido (Stremio + CDN Vercel)
-    // ==========================================
     res.setHeader('Cache-Control', 'public, max-age=43200, s-maxage=86400, stale-while-revalidate=7200');
-    
-    res.json({ metas: page });
+    res.json({ metas: validMetas });
 }
+
 const catalogHandler = (req, res) => {
     const config = core.decrypt(req.params.token);
     if (!config) return res.json({ metas: [] });
@@ -345,7 +345,7 @@ app.get('/:token/meta/:type/:id.json', (req, res) => {
                 if (tmdbData.background) baseMeta.background = tmdbData.background;
                 if (tmdbData.trailer) baseMeta.trailers = [{ source: tmdbData.trailer, type: "Trailer" }];
             }
-            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Cache-Control', 'public, max-age=43200, s-maxage=86400');
             res.json({ meta: baseMeta });
         });
     });
